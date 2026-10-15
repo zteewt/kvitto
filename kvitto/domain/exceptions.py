@@ -45,3 +45,16 @@ class InvalidStatusTransition(DomainError):
         super().__init__(f"Переход {current} -> {target} запрещён")
         self.current = current
         self.target = target
+
+
+class DuplicateIdempotencyKey(DomainError):
+    """Ключ идемпотентности уже занят.
+
+    Инфраструктура переводит сюда ``IntegrityError`` — так сценарий не
+    знает про СУБД, но всё равно может корректно обработать гонку двух
+    параллельных запросов с одинаковым ключом.
+    """
+
+    def __init__(self, key: str) -> None:
+        super().__init__(f"Ключ идемпотентности {key!r} уже использован")
+        self.key = key

@@ -40,11 +40,20 @@ class PaymentRepository(ABC):
 
     @abstractmethod
     def add(self, payment: Payment) -> Payment:
-        """Сохраняет новый платёж и возвращает его с присвоенным id."""
+        """Сохраняет новый платёж и возвращает его с присвоенным id.
+
+        Если ключ идемпотентности уже занят, поднимает
+        :class:`~kvitto.domain.exceptions.DuplicateIdempotencyKey`: так
+        инфраструктура прячет от сценария ``IntegrityError``.
+        """
 
     @abstractmethod
     def get(self, payment_id: int) -> Payment | None:
         """Платёж по id или ``None``."""
+
+    @abstractmethod
+    def update(self, payment: Payment) -> Payment:
+        """Сохраняет изменения существующего платежа."""
 
     @abstractmethod
     def find_by_idempotency_key(self, key: str) -> Payment | None:

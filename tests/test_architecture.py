@@ -58,3 +58,28 @@ def test_domain_only_imports_other_domain_modules():
         for module in _top_level_imports(module_path):
             if module.startswith("kvitto") and not module.startswith(allowed_package):
                 pytest.fail(f"{module_path.name} импортирует {module} — нарушена граница слоёв")
+
+
+APPLICATION_DIR = PROJECT_ROOT / "kvitto" / "application"
+
+
+@pytest.mark.parametrize("module_path", sorted(APPLICATION_DIR.glob("*.py")), ids=lambda p: p.name)
+def test_application_layer_does_not_depend_on_outer_layers(module_path: Path):
+    """Сценарии знают про домен и порты, но не про SQLAlchemy и FastAPI.
+
+    Сборку зависимостей делает ``api/container.py`` — если это правило
+    нарушить, прикладной слой перестанет быть тестируемым без БД.
+    """
+    allowed_package = "kvitto.domain"
+    for module in _top_level_imports(module_path):
+        if module.startswith("kvitto") and not module.startswith(allowed_package):
+            pytest.fail(f"{module_path.name} импортирует {module} — нарушена граница слоёв")
+
+
+def test_every_repository_implementation_is_outside_the_domain():
+    """Реализации портов обязаны жить в инфраструктуре, а не в домене."""
+    infrastructure_dir = PROJECT_ROOT / "kvitto" / "infrastructure"
+    implementations = {
+        module for path in infrastructure_dir.rglob("*.py") for module in _top_level_imports(path)
+    }
+    assert "sqlalchemy" in implementations, "реализации репозиториев должны быть снаружи домена"
