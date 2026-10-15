@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from kvitto.infrastructure.db.schema import prepare_schema
 from kvitto.infrastructure.db.seed import seed_tariffs
 from kvitto.infrastructure.db.session import Database
 
@@ -33,7 +34,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         database = Database(resolved.database_url)
-        database.create_all()
+        prepare_schema(database)
         with database.session() as session:
             created_codes = seed_tariffs(session)
         if created_codes:

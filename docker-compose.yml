@@ -1,0 +1,29 @@
+name: kvitto
+
+services:
+  api:
+    build: .
+    image: kvitto:latest
+    ports:
+      - "8000:8000"
+    environment:
+      # Четыре слэша — абсолютный путь внутри контейнера.
+      DATABASE_URL: sqlite:////data/kvitto.db
+      # Пусто -> проверка подписи вебхука выключена.
+      WEBHOOK_SECRET: "${WEBHOOK_SECRET:-}"
+    volumes:
+      - kvitto-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  kvitto-data:

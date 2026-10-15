@@ -29,6 +29,8 @@ STANDARD_TARIFF = Tariff(
     price=Money.from_rubles(19_900),
 )
 
+WEBHOOK_SECRET = "test-webhook-secret"
+
 # --- доменные фикстуры ------------------------------------------------------
 
 
@@ -55,6 +57,23 @@ def promo_code() -> PromoCode:
 def app(tmp_path):
     """Приложение на отдельной временной базе."""
     return create_app(Settings(database_url=f"sqlite:///{tmp_path / 'test.db'}"))
+
+
+@pytest.fixture
+def secured_app(tmp_path):
+    """Приложение с включённой проверкой подписи вебхука."""
+    return create_app(
+        Settings(
+            database_url=f"sqlite:///{tmp_path / 'secured.db'}",
+            webhook_secret=WEBHOOK_SECRET,
+        )
+    )
+
+
+@pytest.fixture
+def secured_client(secured_app) -> Iterator[TestClient]:
+    with TestClient(secured_app) as secured_test_client:
+        yield secured_test_client
 
 
 @pytest.fixture
