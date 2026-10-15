@@ -5,7 +5,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from kvitto.api.deps import ContainerDep, require_webhook_signature
-from kvitto.api.schemas import BankWebhookRequest, WebhookResponse
+from kvitto.api.schemas import (
+    RESPONSES_BAD_SIGNATURE,
+    RESPONSES_ERRORS,
+    RESPONSES_INVALID_TRANSITION,
+    BankWebhookRequest,
+    WebhookResponse,
+)
 from kvitto.application.dto import ChangePaymentStatusCommand
 
 router = APIRouter(tags=["webhooks"])
@@ -22,6 +28,11 @@ router = APIRouter(tags=["webhooks"])
         "Если задан `WEBHOOK_SECRET`, заголовок `X-Signature` обязателен: "
         "HMAC-SHA256 от тела запроса, иначе 401."
     ),
+    responses={
+        **RESPONSES_INVALID_TRANSITION,
+        **RESPONSES_BAD_SIGNATURE,
+        **RESPONSES_ERRORS,
+    },
 )
 def handle_bank_webhook(payload: BankWebhookRequest, container: ContainerDep) -> WebhookResponse:
     container.change_payment_status.execute(

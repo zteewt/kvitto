@@ -8,6 +8,8 @@ from fastapi import APIRouter, Path, Query, Response, status
 
 from kvitto.api.deps import ContainerDep, IdempotencyKey, tariff_codes_by_id
 from kvitto.api.schemas import (
+    RESPONSES_ERRORS,
+    RESPONSES_REPLAYED,
     CreatePaymentRequest,
     PaymentResponse,
     payment_to_response,
@@ -28,6 +30,7 @@ router = APIRouter(tags=["payments"])
         "С заголовком `Idempotency-Key` повторный запрос с тем же ключом "
         "возвращает уже созданный платёж с кодом 200 и не создаёт второй."
     ),
+    responses={**RESPONSES_REPLAYED, **RESPONSES_ERRORS},
 )
 def create_payment(
     payload: CreatePaymentRequest,
@@ -57,6 +60,7 @@ def create_payment(
     "/payments/{payment_id}",
     response_model=PaymentResponse,
     summary="Платёж по id",
+    responses={**RESPONSES_ERRORS},
 )
 def get_payment(payment_id: Annotated[int, Path(ge=1)], container: ContainerDep) -> PaymentResponse:
     payment = container.get_payment.execute(payment_id)
@@ -69,6 +73,7 @@ def get_payment(payment_id: Annotated[int, Path(ge=1)], container: ContainerDep)
     response_model=list[PaymentResponse],
     summary="Список платежей с фильтрами",
     description="Бонусное требование: фильтры по `email` и `status`.",
+    responses={**RESPONSES_ERRORS},
 )
 def list_payments(
     container: ContainerDep,

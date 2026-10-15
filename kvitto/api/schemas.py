@@ -89,6 +89,66 @@ class WebhookResponse(BaseModel):
     result: str = "ok"
 
 
+def _detail_example(detail: str) -> dict:
+    return {
+        "description": "Стандартный ответ FastAPI",
+        "content": {"application/json": {"example": {"detail": detail}}},
+    }
+
+
+#: Описания ответов с ошибками — чтобы /docs показывал реальные коды,
+#: а не только 200/422, которые FastAPI выводит автоматически.
+RESPONSES_ERRORS: dict[int | str, dict] = {
+    404: _detail_example("Платёж 42 не найден"),
+    422: {
+        "description": "Ошибка валидации: форма запроса или бизнес-правило",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Неизвестный промокод: 'SUMMER'"},
+            }
+        },
+    },
+}
+
+RESPONSES_INVALID_TRANSITION: dict[int | str, dict] = {
+    409: {
+        "description": "Переход статуса запрещён, статус не меняется",
+        "content": {"application/json": {"example": {"error": "invalid_transition"}}},
+    }
+}
+
+RESPONSES_BAD_SIGNATURE: dict[int | str, dict] = {
+    401: {
+        "description": "HMAC-подпись X-Signature не совпала или отсутствует",
+        "content": {"application/json": {"example": {"detail": "Неверная подпись вебхука"}}},
+    }
+}
+
+RESPONSES_REPLAYED: dict[int | str, dict] = {
+    200: {
+        "description": "Повтор с тем же Idempotency-Key: вернулся существующий платёж",
+        "content": {
+            "application/json": {
+                "example": {
+                    "id": 1,
+                    "status": "pending",
+                    "tariff_id": 2,
+                    "tariff_code": "standard",
+                    "amount": 1990000,
+                    "discount": 0,
+                    "amount_due": 1990000,
+                    "method": "card",
+                    "installment_months": None,
+                    "schedule": None,
+                    "email": "student@example.com",
+                    "created_at": "2026-10-15T14:42:12.572111Z",
+                }
+            }
+        },
+    }
+}
+
+
 def tariff_to_response(tariff: Tariff) -> TariffResponse:
     return TariffResponse(
         id=tariff.id,
